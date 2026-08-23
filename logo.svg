@@ -1,26 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- KetofolDoc Signature Blue-to-Emerald Gradient -->
     <linearGradient id="ketofolGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#2563eb" />
-      <stop offset="100%" stop-color="#10b981" />
+      <stop offset="0%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#059669" />
     </linearGradient>
-
-    <!-- Subtle Drop Shadow -->
-    <filter id="iconShadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.3" />
-    </filter>
   </defs>
 
-  <!-- Squircle Base Frame -->
-  <rect width="512" height="512" rx="120" fill="url(#ketofolGrad)" filter="url(#iconShadow)" />
+  <!-- Background Base -->
+  <rect width="512" height="512" rx="128" fill="url(#ketofolGrad)" />
 
-  <!-- Clean Activity / ECG Waveform Glyph -->
-  <polyline 
-    points="80,256 150,256 205,96 307,416 362,256 432,256" 
-    fill="none" 
-    stroke="#ffffff" 
-    stroke-width="40" 
-    stroke-linecap="round" 
-    stroke-linejoin="round" />
+  <!-- Monogram KD Layer -->
+  <text x="130" y="320" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="220" fill="#ffffff" letter-spacing="-8">KD</text>
+
+  <!-- Stylized Integrated Cross-Stroke -->
+  <path d="M 60 380 L 170 380 L 210 290 L 260 450 L 310 330 L 350 380 L 452 380" fill="none" stroke="#6ee7b7" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" />
 </svg>
