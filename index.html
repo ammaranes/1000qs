@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>1000 Anesthesia Questions</title>
+  
+  <!-- Favicon & Touch Icons -->
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="apple-touch-icon" href="logo.svg" />
+
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Firebase SDKs (v9 Compat Mode) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    body { -webkit-tap-highlight-color: transparent; }
+    .safe-top { padding-top: env(safe-area-inset-top); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans select-none">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-40 safe-top">
+    <div class="max-w-4xl mx-auto px-4 py-2 min-h-[3.75rem] flex items-center justify-between gap-3">
+      
+      <!-- Left Section: Menu, Logo, and Title -->
+      <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+        <button id="btn-menu" class="p-2 text-slate-400 hover:text-white rounded-lg active:bg-slate-800 shrink-0" title="Chapters">
+          <i data-lucide="layers" class="w-5 h-5"></i>
+        </button>
+
+        <img src="logo.svg" alt="App Logo" class="w-8 h-8 rounded-lg border border-slate-700/60 shrink-0 object-contain" />
+
+        <div class="min-w-0 flex-1 flex flex-col justify-center">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400 truncate leading-tight">
+            1000 Anesthesia Questions
+          </span>
+          <div class="flex items-center space-x-2 truncate">
+            <h1 id="deck-title" class="font-bold text-xs sm:text-sm text-slate-100 truncate leading-snug">
+              Loading Chapters...
+            </h1>
+            <span class="text-slate-600 text-xs">•</span>
+            <p id="deck-progress-text" class="text-[11px] font-medium text-emerald-400 truncate leading-snug">
+              0 / 0 Answered
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right Section: Controls -->
+      <div class="flex items-center space-x-1 sm:space-x-2 shrink-0">
+        <button id="btn-shuffle" class="p-2 text-slate-400 hover:text-indigo-400 rounded-lg active:bg-slate-800 transition shrink-0" title="Toggle Random Order">
+          <i data-lucide="shuffle" class="w-5 h-5"></i>
+        </button>
+        <button id="btn-flag" class="p-2 text-slate-400 hover:text-amber-400 rounded-lg active:bg-slate-800 transition shrink-0" title="Bookmark Question">
+          <i data-lucide="bookmark" class="w-5 h-5"></i>
+        </button>
+        <button id="btn-auth-modal" class="p-1.5 text-slate-400 hover:text-blue-400 rounded-lg active:bg-slate-800 flex items-center transition shrink-0" title="Account & Sync">
+          <div id="auth-avatar" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+            <i data-lucide="user" class="w-4 h-4"></i>
+          </div>
+          <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-500 -ml-1.5 -mt-3 hidden"></span>
+        </button>
+      </div>
+    </div>
+    
+    <div class="w-full bg-slate-800 h-1">
+      <div id="progress-bar-fill" class="bg-emerald-500 h-1 w-0 transition-all duration-300"></div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col justify-between">
+    
+    <div id="view-empty" class="hidden my-auto text-center py-12 px-4">
+      <div class="w-16 h-16 bg-slate-800 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-700">
+        <i data-lucide="folder-open" class="w-8 h-8"></i>
+      </div>
+      <h2 class="text-xl font-bold text-slate-100 mb-2">No Chapter Loaded</h2>
+      <p class="text-sm text-slate-400 max-w-md mx-auto mb-6">Select a chapter from the menu to start practicing.</p>
+    </div>
+
+    <!-- Active Question View -->
+    <div id="view-quiz" class="flex-1 flex flex-col">
+      <div class="flex items-center justify-between text-xs font-semibold text-slate-400 mb-3">
+        <div class="flex items-center space-x-2">
+          <span id="question-number-badge" class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-md text-slate-300">Question 1</span>
+          <span id="shuffle-mode-tag" class="hidden px-2 py-0.5 bg-indigo-950/80 border border-indigo-700/50 text-indigo-300 rounded text-[10px] uppercase font-bold tracking-wider">Shuffled</span>
+        </div>
+        <span id="score-badge" class="text-slate-400">Accuracy: 100%</span>
+      </div>
+
+      <!-- Question Stem & Image -->
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-sm mb-4">
+        <p id="question-stem" class="text-base sm:text-lg font-medium text-slate-100 leading-relaxed"></p>
+        <div id="stem-image-container" class="mt-4 hidden">
+          <img id="stem-image" src="" alt="Question Diagram" class="max-h-72 w-auto mx-auto rounded-xl border border-slate-700 bg-white/5 p-1" />
+        </div>
+      </div>
+
+      <!-- Options Container -->
+      <div id="options-container" class="space-y-3 mb-6"></div>
+
+      <!-- Explanation Box -->
+      <div id="explanation-box" class="hidden bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-5 mb-6 text-sm text-slate-300">
+        <div class="flex items-center text-emerald-400 font-bold mb-2">
+          <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Explanation & Rationale
+        </div>
+        <div id="explanation-content" class="leading-relaxed space-y-2"></div>
+        <div id="explanation-images-container" class="mt-4 space-y-3 hidden"></div>
+      </div>
+    </div>
+
+    <!-- Navigation Footer -->
+    <footer id="quiz-footer" class="sticky bottom-0 bg-slate-950/90 backdrop-blur pt-3 pb-3 safe-bottom border-t border-slate-800/80">
+      <div class="flex items-center justify-between space-x-3 mb-2.5">
+        <button id="btn-prev" class="flex-1 py-3 bg-slate-900 hover:bg-slate-800 active:bg-slate-700 border border-slate-800 rounded-xl font-semibold text-sm flex items-center justify-center text-slate-300 transition">
+          <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i> Prev
+        </button>
+        <button id="btn-reveal" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 rounded-xl font-semibold text-sm text-slate-200 transition">
+          Reveal
+        </button>
+        <button id="btn-next" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-xl font-semibold text-sm text-white flex items-center justify-center transition">
+          Next <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-center space-x-3 text-[11px] text-slate-500 pt-0.5">
+        <a href="privacy.html" class="hover:text-slate-300 transition">Privacy Policy</a>
+        <span>•</span>
+        <a href="terms.html" class="hover:text-slate-300 transition">Terms of Service</a>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Chapter Switcher Modal -->
+  <div id="modal-decks" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl max-h-[85vh] flex flex-col overflow-hidden">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-slate-100">1000 Anesthesia Review</h3>
+          <p class="text-[11px] text-slate-400">Select a chapter to practice</p>
+        </div>
+        <button id="btn-close-decks" class="p-1 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="deck-list" class="p-4 overflow-y-auto space-y-2.5 flex-1"></div>
+    </div>
+  </div>
+
+  <!-- User Account & Sync Modal -->
+  <div id="modal-auth" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 flex flex-col max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2 text-blue-400 font-bold text-base">
+          <i data-lucide="cloud" class="w-5 h-5"></i>
+          <span>Cloud Sync & Account</span>
+        </div>
+        <button id="btn-close-auth" class="p-1 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="auth-state-logged-in" class="hidden flex-col items-center text-center py-4">
+        <div id="user-display-avatar" class="w-14 h-14 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center text-lg font-bold mb-3"></div>
+        <h4 id="user-display-name" class="font-bold text-slate-100 text-base">User Name</h4>
+        <p id="user-display-email" class="text-xs text-slate-400 mb-6">user@example.com</p>
+        <div class="w-full bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-300 mb-6 flex items-center justify-center">
+          <i data-lucide="check" class="w-4 h-4 mr-1.5"></i> Sync active across your devices
+        </div>
+        <button id="btn-logout" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold rounded-xl text-sm transition">
+          Sign Out
+        </button>
+      </div>
+
+      <div id="auth-state-logged-out" class="flex flex-col">
+        <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+          Sign in or create an account to synchronize your chapter progress and bookmarks across devices.
+        </p>
+
+        <button id="btn-google-login" class="w-full py-3 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-900 font-semibold rounded-xl text-sm flex items-center justify-center space-x-2 shadow-md transition mb-4">
+          <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          <span>Continue with Google</span>
+        </button>
+
+        <div class="flex items-center my-2 mb-4">
+          <div class="flex-1 border-t border-slate-800"></div>
+          <span class="px-3 text-[11px] text-slate-500 font-medium uppercase tracking-wider">or with email</span>
+          <div class="flex-1 border-t border-slate-800"></div>
+        </div>
+
+        <div class="flex p-1 bg-slate-950 rounded-xl border border-slate-800 mb-4">
+          <button id="tab-auth-signin" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-blue-600 text-white">Sign In</button>
+          <button id="tab-auth-signup" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition text-slate-400 hover:text-slate-200">Create Account</button>
+        </div>
+
+        <div id="auth-error-box" class="hidden mb-4 p-3 bg-rose-950/50 border border-rose-800/60 rounded-xl text-xs text-rose-300 leading-relaxed"></div>
+
+        <form id="form-email-auth" class="space-y-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Email Address</label>
+            <input type="email" id="input-auth-email" required placeholder="doctor@example.com" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-sm focus:border-blue-500 focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">Password</label>
+            <input type="password" id="input-auth-password" required placeholder="••••••••" minlength="6" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-sm focus:border-blue-500 focus:outline-none" />
+          </div>
+
+          <button type="submit" id="btn-email-submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold rounded-xl text-sm transition mt-1 shadow-lg shadow-blue-600/20">
+            Sign In
+          </button>
+        </form>
+
+        <div class="flex items-center justify-between text-[11px] text-slate-500 mt-3 px-1">
+          <button id="btn-forgot-password" type="button" class="hover:text-blue-400 transition">Forgot password?</button>
+          <div class="space-x-2">
+            <a href="privacy.html" class="hover:text-slate-300 underline transition">Privacy</a>
+            <span>•</span>
+            <a href="terms.html" class="hover:text-slate-300 underline transition">Terms</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ES6 Application Logic -->
+  <script type="module">
+    import { allChapters } from './decks/index.js';
+
+    // Build Decks Map from allChapters
+    const DECKS = {};
+    allChapters.forEach(ch => {
+      const key = `ch_${String(ch.id).padStart(2, '0')}`;
+      DECKS[key] = {
+        title: `Ch ${ch.id}: ${ch.title}`,
+        questions: ch.questions
+      };
+    });
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTBiUKXcQ6i_0qdygn6sEUflFOlERzQOs",
+      authDomain: "qb-sync-e6294.firebaseapp.com",
+      projectId: "qb-sync-e6294",
+      storageBucket: "qb-sync-e6294.firebasestorage.app",
+      messagingSenderId: "94979024020",
+      appId: "1:94979024020:web:687bd4c064b87ff1180081"
+    };
+
+    let auth = null, db = null, syncUnsubscribe = null, currentUser = null, authMode = 'signin';
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.firestore();
+    } catch (e) {
+      console.warn("Firebase Init:", e);
+    }
+
+    const LOCAL_STORAGE_KEY = 'anes_1000q_progress';
+    const FIRESTORE_COLLECTION = 'users_1000q';
+
+    let state = {
+      decks: DECKS,
+      currentDeckId: Object.keys(DECKS)[0] || null,
+      userProgress: {}
+    };
+
+    const savedProgress = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (savedProgress) {
+      try { state.userProgress = JSON.parse(savedProgress); } catch (e) {}
+    }
+
+    if (auth) {
+      auth.onAuthStateChanged((user) => {
+        currentUser = user;
+        updateAuthUI(user);
+        if (user) initUserCloudSync(user.uid);
+        else {
+          if (syncUnsubscribe) syncUnsubscribe();
+          document.getElementById('sync-dot').classList.add('hidden');
+        }
+      });
+    }
+
+    function updateAuthUI(user) {
+      const loggedInView = document.getElementById('auth-state-logged-in');
+      const loggedOutView = document.getElementById('auth-state-logged-out');
+      const avatar = document.getElementById('auth-avatar');
+
+      if (user) {
+        loggedInView.classList.remove('hidden');
+        loggedOutView.classList.add('hidden');
+        document.getElementById('user-display-name').textContent = user.displayName || 'Doctor / Candidate';
+        document.getElementById('user-display-email').textContent = user.email;
+        const initial = (user.displayName || user.email || 'U')[0].toUpperCase();
+        document.getElementById('user-display-avatar').textContent = initial;
+        avatar.innerHTML = `<span class="text-blue-400 font-bold">${initial}</span>`;
+      } else {
+        loggedInView.classList.add('hidden');
+        loggedOutView.classList.remove('hidden');
+        avatar.innerHTML = `<i data-lucide="user" class="w-4 h-4"></i>`;
+      }
+      lucide.createIcons();
+    }
+
+    function initUserCloudSync(userId) {
+      if (!db) return;
+      document.getElementById('sync-dot').classList.remove('hidden');
+      if (syncUnsubscribe) syncUnsubscribe();
+
+      const userDocRef = db.collection(FIRESTORE_COLLECTION).doc(userId);
+
+      syncUnsubscribe = userDocRef.onSnapshot((doc) => {
+        if (doc.exists) {
+          const cloudData = doc.data();
+          if (cloudData.userProgress) state.userProgress = cloudData.userProgress;
+          if (cloudData.currentDeckId && state.decks[cloudData.currentDeckId]) {
+            state.currentDeckId = cloudData.currentDeckId;
+          }
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state.userProgress));
+          render();
+        } else {
+          pushStateToCloud();
+        }
+      });
+    }
+
+    function pushStateToCloud() {
+      if (!db || !currentUser) return;
+      db.collection(FIRESTORE_COLLECTION).doc(currentUser.uid).set({
+        userProgress: state.userProgress,
+        currentDeckId: state.currentDeckId,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    function generateShuffledIndices(length) {
+      const arr = Array.from({ length }, (_, i) => i);
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function toggleShuffleMode() {
+      const currentDeck = state.decks[state.currentDeckId];
+      if (!currentDeck || currentDeck.questions.length === 0) return;
+      const progress = getProgress();
+      progress.isShuffled = !progress.isShuffled;
+      if (progress.isShuffled) {
+        progress.order = generateShuffledIndices(currentDeck.questions.length);
+        progress.currentIndex = 0;
+      } else {
+        const prevActual = (progress.order && progress.order.length > 0) ? progress.order[progress.currentIndex] : progress.currentIndex;
+        progress.currentIndex = prevActual || 0;
+        progress.order = [];
+      }
+      saveState();
+    }
+
+    function getProgress() {
+      if (!state.currentDeckId) return { currentIndex: 0, answers: {}, flags: [], isShuffled: false, order: [] };
+      if (!state.userProgress[state.currentDeckId]) {
+        state.userProgress[state.currentDeckId] = { currentIndex: 0, answers: {}, flags: [], isShuffled: false, order: [] };
+      }
+      return state.userProgress[state.currentDeckId];
+    }
+
+    function saveState() {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state.userProgress));
+      render();
+      pushStateToCloud();
+    }
+
+    function render() {
+      lucide.createIcons();
+      const currentDeck = state.currentDeckId ? state.decks[state.currentDeckId] : null;
+
+      if (!currentDeck || !currentDeck.questions || currentDeck.questions.length === 0) {
+        document.getElementById('view-empty').classList.remove('hidden');
+        document.getElementById('view-quiz').classList.add('hidden');
+        document.getElementById('quiz-footer').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('view-empty').classList.add('hidden');
+      document.getElementById('view-quiz').classList.remove('hidden');
+      document.getElementById('quiz-footer').classList.remove('hidden');
+
+      const progress = getProgress();
+      const totalQ = currentDeck.questions.length;
+      const qPointer = progress.currentIndex || 0;
+      const actualIndex = (progress.isShuffled && progress.order && progress.order.length === totalQ)
+        ? progress.order[qPointer] : qPointer;
+      const q = currentDeck.questions[actualIndex] || currentDeck.questions[0];
+
+      // Update Header
+      document.getElementById('deck-title').textContent = currentDeck.title;
+      const answeredCount = Object.keys(progress.answers || {}).length;
+      document.getElementById('deck-progress-text').textContent = `${answeredCount} / ${totalQ} Answered`;
+      
+      const pct = totalQ > 0 ? (answeredCount / totalQ) * 100 : 0;
+      document.getElementById('progress-bar-fill').style.width = `${pct}%`;
+
+      // Accuracy
+      let correctCount = 0;
+      Object.entries(progress.answers || {}).forEach(([idx, ans]) => {
+        const item = currentDeck.questions[idx];
+        if (item && item.correctAnswer === ans) correctCount++;
+      });
+      const acc = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 100;
+      document.getElementById('score-badge').textContent = `Accuracy: ${acc}%`;
+
+      // Shuffle Tag
+      const shuffleBtn = document.getElementById('btn-shuffle');
+      const shuffleTag = document.getElementById('shuffle-mode-tag');
+      if (progress.isShuffled) {
+        shuffleBtn.className = 'p-2 text-indigo-400 bg-indigo-950/60 border border-indigo-800/60 rounded-lg active:bg-slate-800 transition shrink-0';
+        shuffleTag.classList.remove('hidden');
+        document.getElementById('question-number-badge').textContent = `Question ${qPointer + 1} of ${totalQ} (Original #${actualIndex + 1})`;
+      } else {
+        shuffleBtn.className = 'p-2 text-slate-400 hover:text-indigo-400 rounded-lg active:bg-slate-800 transition shrink-0';
+        shuffleTag.classList.add('hidden');
+        document.getElementById('question-number-badge').textContent = `Question ${qPointer + 1} of ${totalQ}`;
+      }
+
+      // Stem Text & Optional Question Figure
+      document.getElementById('question-stem').textContent = q.stem;
+      const stemImgContainer = document.getElementById('stem-image-container');
+      const stemImg = document.getElementById('stem-image');
+      if (q.image) {
+        const cleanPath = q.image.startsWith('/') ? q.image.slice(1) : q.image;
+        stemImg.src = cleanPath;
+        stemImgContainer.classList.remove('hidden');
+      } else {
+        stemImgContainer.classList.add('hidden');
+      }
+
+      // Flag State
+      const isFlagged = (progress.flags || []).includes(actualIndex);
+      const flagBtn = document.getElementById('btn-flag');
+      flagBtn.className = isFlagged 
+        ? 'p-2 text-amber-400 bg-amber-950/40 border border-amber-800/50 rounded-lg active:bg-slate-800 transition shrink-0' 
+        : 'p-2 text-slate-400 hover:text-amber-400 rounded-lg active:bg-slate-800 transition shrink-0';
+
+      // Render Options (Key-Value Schema)
+      const optionsContainer = document.getElementById('options-container');
+      optionsContainer.innerHTML = '';
+      const selectedAnswer = (progress.answers || {})[actualIndex];
+
+      Object.entries(q.options || {}).forEach(([letter, text]) => {
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left p-4 rounded-xl border font-medium text-sm transition flex items-start space-x-3 `;
+        if (selectedAnswer) {
+          if (letter === q.correctAnswer) btn.className += 'bg-emerald-950/40 border-emerald-500/80 text-emerald-200';
+          else if (letter === selectedAnswer) btn.className += 'bg-rose-950/40 border-rose-500/80 text-rose-200';
+          else btn.className += 'bg-slate-900/50 border-slate-800/50 text-slate-500';
+        } else {
+          btn.className += 'bg-slate-900 border-slate-800 hover:border-slate-700 active:bg-slate-800 text-slate-200';
+        }
+        btn.innerHTML = `<span class="font-bold px-2 py-0.5 rounded bg-slate-800 text-xs text-slate-300">${letter}</span><span>${text}</span>`;
+        btn.onclick = () => handleSelectOption(actualIndex, letter);
+        optionsContainer.appendChild(btn);
+      });
+
+      // Explanation & Optional Rationale Figures
+      const expBox = document.getElementById('explanation-box');
+      const expImgContainer = document.getElementById('explanation-images-container');
+      if (selectedAnswer && (q.explanation || q.correctAnswer)) {
+        expBox.classList.remove('hidden');
+        document.getElementById('explanation-content').innerHTML = `
+          <div><b>Correct Answer:</b> Option ${q.correctAnswer}</div>
+          <div class="mt-1 text-slate-300">${q.explanation || 'No rationale provided.'}</div>
+        `;
+
+        if (q.explanationImages && q.explanationImages.length > 0) {
+          expImgContainer.innerHTML = '';
+          q.explanationImages.forEach(src => {
+            const cleanSrc = src.startsWith('/') ? src.slice(1) : src;
+            const img = document.createElement('img');
+            img.src = cleanSrc;
+            img.className = 'max-h-72 w-auto mx-auto rounded-xl border border-slate-700 bg-white/5 p-1';
+            expImgContainer.appendChild(img);
+          });
+          expImgContainer.classList.remove('hidden');
+        } else {
+          expImgContainer.classList.add('hidden');
+        }
+      } else {
+        expBox.classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    function handleSelectOption(actualIndex, letter) {
+      const currentDeck = state.decks[state.currentDeckId];
+      if (!currentDeck) return;
+      const progress = getProgress();
+      progress.answers[actualIndex] = letter;
+      saveState();
+    }
+
+    function renderDeckList() {
+      const list = document.getElementById('deck-list');
+      list.innerHTML = '';
+      const deckKeys = Object.keys(state.decks);
+
+      deckKeys.forEach(id => {
+        const deck = state.decks[id];
+        const progress = state.userProgress[id] || { answers: {} };
+        const answered = Object.keys(progress.answers || {}).length;
+        const isCurrent = id === state.currentDeckId;
+
+        const item = document.createElement('div');
+        item.className = `p-3.5 rounded-xl border flex items-center justify-between transition cursor-pointer ${
+          isCurrent ? 'bg-blue-600/15 border-blue-500/60 text-blue-200' : 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800 text-slate-300'
+        }`;
+        
+        item.innerHTML = `
+          <div class="flex-1 min-w-0 pr-3">
+            <div class="font-bold text-sm truncate text-slate-100">${deck.title}</div>
+            <div class="text-xs text-slate-400 mt-0.5">${answered}/${deck.questions.length} completed</div>
+          </div>
+          <div class="shrink-0">
+            ${isCurrent ? `<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-blue-500/20 border border-blue-400/40 text-blue-300 rounded-md">Active</span>` : `<i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>`}
+          </div>
+        `;
+
+        item.onclick = () => {
+          state.currentDeckId = id;
+          saveState();
+          document.getElementById('modal-decks').classList.add('hidden');
+        };
+        list.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    // Navigation Events
+    document.getElementById('btn-shuffle').onclick = () => toggleShuffleMode();
+    document.getElementById('btn-next').onclick = () => {
+      const p = getProgress(), d = state.decks[state.currentDeckId];
+      if (p && d && p.currentIndex < d.questions.length - 1) { p.currentIndex++; saveState(); }
+    };
+    document.getElementById('btn-prev').onclick = () => {
+      const p = getProgress();
+      if (p && p.currentIndex > 0) { p.currentIndex--; saveState(); }
+    };
+    document.getElementById('btn-reveal').onclick = () => {
+      const p = getProgress(), d = state.decks[state.currentDeckId];
+      if (p && d) {
+        const idx = (p.isShuffled && p.order && p.order.length > 0) ? p.order[p.currentIndex] : p.currentIndex;
+        handleSelectOption(idx, d.questions[idx].correctAnswer || 'A');
+      }
+    };
+    document.getElementById('btn-flag').onclick = () => {
+      const p = getProgress(), d = state.decks[state.currentDeckId];
+      if (!p || !d) return;
+      const idx = (p.isShuffled && p.order && p.order.length > 0) ? p.order[p.currentIndex] : p.currentIndex;
+      p.flags = p.flags || [];
+      const pos = p.flags.indexOf(idx);
+      if (pos > -1) p.flags.splice(pos, 1); else p.flags.push(idx);
+      saveState();
+    };
+
+    // Modal Events
+    document.getElementById('btn-menu').onclick = () => { renderDeckList(); document.getElementById('modal-decks').classList.remove('hidden'); };
+    document.getElementById('btn-close-decks').onclick = () => document.getElementById('modal-decks').classList.add('hidden');
+    document.getElementById('btn-auth-modal').onclick = () => document.getElementById('modal-auth').classList.remove('hidden');
+    document.getElementById('btn-close-auth').onclick = () => document.getElementById('modal-auth').classList.add('hidden');
+
+    // Email Auth Handlers
+    document.getElementById('tab-auth-signin').onclick = () => setAuthMode('signin');
+    document.getElementById('tab-auth-signup').onclick = () => setAuthMode('signup');
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      const tabSignIn = document.getElementById('tab-auth-signin');
+      const tabSignUp = document.getElementById('tab-auth-signup');
+      const btnSubmit = document.getElementById('btn-email-submit');
+      const errBox = document.getElementById('auth-error-box');
+
+      errBox.classList.add('hidden');
+      if (mode === 'signin') {
+        tabSignIn.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-blue-600 text-white';
+        tabSignUp.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg transition text-slate-400 hover:text-slate-200';
+        btnSubmit.textContent = 'Sign In';
+      } else {
+        tabSignUp.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-blue-600 text-white';
+        tabSignIn.className = 'flex-1 py-1.5 text-xs font-bold rounded-lg transition text-slate-400 hover:text-slate-200';
+        btnSubmit.textContent = 'Create Account';
+      }
+    }
+
+    document.getElementById('form-email-auth').onsubmit = (e) => {
+      e.preventDefault();
+      if (!auth) return;
+      const email = document.getElementById('input-auth-email').value.trim();
+      const password = document.getElementById('input-auth-password').value;
+      const errBox = document.getElementById('auth-error-box');
+      const btnSubmit = document.getElementById('btn-email-submit');
+
+      errBox.classList.add('hidden');
+      btnSubmit.disabled = true;
+
+      const p = authMode === 'signup' 
+        ? auth.createUserWithEmailAndPassword(email, password)
+        : auth.signInWithEmailAndPassword(email, password);
+
+      p.then(() => document.getElementById('modal-auth').classList.add('hidden'))
+       .catch((err) => { errBox.textContent = err.message; errBox.classList.remove('hidden'); })
+       .finally(() => { btnSubmit.disabled = false; btnSubmit.textContent = authMode === 'signup' ? 'Create Account' : 'Sign In'; });
+    };
+
+    document.getElementById('btn-forgot-password').onclick = () => {
+      if (!auth) return;
+      const email = document.getElementById('input-auth-email').value.trim();
+      const errBox = document.getElementById('auth-error-box');
+      if (!email) {
+        errBox.textContent = 'Please enter your email above, then click forgot password.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+      auth.sendPasswordResetEmail(email).then(() => {
+        alert('Password reset email sent.');
+      }).catch((err) => {
+        errBox.textContent = err.message;
+        errBox.classList.remove('hidden');
+      });
+    };
+
+    document.getElementById('btn-google-login').onclick = () => {
+      if (!auth) return;
+      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => {
+        document.getElementById('modal-auth').classList.add('hidden');
+      }).catch((err) => {
+        const box = document.getElementById('auth-error-box');
+        box.textContent = err.message;
+        box.classList.remove('hidden');
+      });
+    };
+
+    document.getElementById('btn-logout').onclick = () => {
+      if (!auth) return;
+      auth.signOut().then(() => document.getElementById('modal-auth').classList.add('hidden'));
+    };
+
+    render();
+  </script>
+</body>
+</html>
