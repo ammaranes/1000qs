@@ -5,12 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>1000 Anesthesia Questions</title>
-  
-  <!-- Favicon & Touch Icons -->
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="logo.svg" />
-
+  <title>1000 Anesthesia Questions</title>
+  
   <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -32,7 +30,7 @@
   <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-40 safe-top">
     <div class="max-w-4xl mx-auto px-4 py-2 min-h-[3.75rem] flex items-center justify-between gap-3">
       
-      <!-- Left Section: Menu, Logo, and Title -->
+      <!-- Left Section: Menu, Logo, and Dual-Line Title -->
       <div class="flex items-center space-x-2.5 min-w-0 flex-1">
         <button id="btn-menu" class="p-2 text-slate-400 hover:text-white rounded-lg active:bg-slate-800 shrink-0" title="Chapters">
           <i data-lucide="layers" class="w-5 h-5"></i>
@@ -56,14 +54,24 @@
         </div>
       </div>
       
-      <!-- Right Section: Controls -->
+      <!-- Right Section: Action Controls -->
       <div class="flex items-center space-x-1 sm:space-x-2 shrink-0">
+        <!-- Shuffle Toggle Button -->
         <button id="btn-shuffle" class="p-2 text-slate-400 hover:text-indigo-400 rounded-lg active:bg-slate-800 transition shrink-0" title="Toggle Random Order">
           <i data-lucide="shuffle" class="w-5 h-5"></i>
         </button>
+
+        <!-- SRS Due Mode Button -->
+        <button id="btn-srs-filter" class="p-2 text-slate-400 hover:text-emerald-400 rounded-lg active:bg-slate-800 transition shrink-0" title="SRS Due Review Mode">
+          <i data-lucide="brain" class="w-5 h-5"></i>
+        </button>
+        
+        <!-- Bookmark Button -->
         <button id="btn-flag" class="p-2 text-slate-400 hover:text-amber-400 rounded-lg active:bg-slate-800 transition shrink-0" title="Bookmark Question">
           <i data-lucide="bookmark" class="w-5 h-5"></i>
         </button>
+        
+        <!-- User Account / Sync Button -->
         <button id="btn-auth-modal" class="p-1.5 text-slate-400 hover:text-blue-400 rounded-lg active:bg-slate-800 flex items-center transition shrink-0" title="Account & Sync">
           <div id="auth-avatar" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
             <i data-lucide="user" class="w-4 h-4"></i>
@@ -71,8 +79,10 @@
           <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-500 -ml-1.5 -mt-3 hidden"></span>
         </button>
       </div>
+
     </div>
     
+    <!-- Linear Progress Bar -->
     <div class="w-full bg-slate-800 h-1">
       <div id="progress-bar-fill" class="bg-emerald-500 h-1 w-0 transition-all duration-300"></div>
     </div>
@@ -81,6 +91,7 @@
   <!-- Main Content Container -->
   <main class="flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col justify-between">
     
+    <!-- Empty State -->
     <div id="view-empty" class="hidden my-auto text-center py-12 px-4">
       <div class="w-16 h-16 bg-slate-800 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-700">
         <i data-lucide="folder-open" class="w-8 h-8"></i>
@@ -95,11 +106,12 @@
         <div class="flex items-center space-x-2">
           <span id="question-number-badge" class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-md text-slate-300">Question 1</span>
           <span id="shuffle-mode-tag" class="hidden px-2 py-0.5 bg-indigo-950/80 border border-indigo-700/50 text-indigo-300 rounded text-[10px] uppercase font-bold tracking-wider">Shuffled</span>
+          <span id="srs-mode-tag" class="hidden px-2 py-0.5 bg-emerald-950/80 border border-emerald-700/50 text-emerald-300 rounded text-[10px] uppercase font-bold tracking-wider">SRS Due Mode</span>
         </div>
         <span id="score-badge" class="text-slate-400">Accuracy: 100%</span>
       </div>
 
-      <!-- Question Stem & Image -->
+      <!-- Question Stem & Optional Stem Figure -->
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-sm mb-4">
         <p id="question-stem" class="text-base sm:text-lg font-medium text-slate-100 leading-relaxed"></p>
         <div id="stem-image-container" class="mt-4 hidden">
@@ -110,17 +122,43 @@
       <!-- Options Container -->
       <div id="options-container" class="space-y-3 mb-6"></div>
 
-      <!-- Explanation Box -->
+      <!-- Explanation & Rationale Box -->
       <div id="explanation-box" class="hidden bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-5 mb-6 text-sm text-slate-300">
         <div class="flex items-center text-emerald-400 font-bold mb-2">
           <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Explanation & Rationale
         </div>
         <div id="explanation-content" class="leading-relaxed space-y-2"></div>
         <div id="explanation-images-container" class="mt-4 space-y-3 hidden"></div>
+
+        <!-- Anki SRS Recall Bar -->
+        <div class="mt-5 pt-4 border-t border-slate-800">
+          <div class="text-xs font-semibold text-slate-400 mb-2 flex items-center justify-between">
+            <span>Rate Recall (Spaced Repetition):</span>
+            <span id="srs-status-tag" class="text-[10px] text-slate-500">Not rated yet</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <button type="button" onclick="window.rateRecall('again')" class="py-2 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800/60 text-rose-300 font-bold text-xs flex flex-col items-center transition active:scale-95">
+              <span>Again</span>
+              <span class="text-[9px] font-normal text-rose-400/80">1 Day</span>
+            </button>
+            <button type="button" onclick="window.rateRecall('hard')" class="py-2 rounded-lg bg-amber-950/60 hover:bg-amber-900 border border-amber-800/60 text-amber-300 font-bold text-xs flex flex-col items-center transition active:scale-95">
+              <span>Hard</span>
+              <span class="text-[9px] font-normal text-amber-400/80">Slower</span>
+            </button>
+            <button type="button" onclick="window.rateRecall('good')" class="py-2 rounded-lg bg-blue-950/60 hover:bg-blue-900 border border-blue-800/60 text-blue-300 font-bold text-xs flex flex-col items-center transition active:scale-95">
+              <span>Good</span>
+              <span class="text-[9px] font-normal text-blue-400/80">Standard</span>
+            </button>
+            <button type="button" onclick="window.rateRecall('easy')" class="py-2 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/60 text-emerald-300 font-bold text-xs flex flex-col items-center transition active:scale-95">
+              <span>Easy</span>
+              <span class="text-[9px] font-normal text-emerald-400/80">4-7 Days</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Navigation Footer -->
+    <!-- Navigation Bottom Bar -->
     <footer id="quiz-footer" class="sticky bottom-0 bg-slate-950/90 backdrop-blur pt-3 pb-3 safe-bottom border-t border-slate-800/80">
       <div class="flex items-center justify-between space-x-3 mb-2.5">
         <button id="btn-prev" class="flex-1 py-3 bg-slate-900 hover:bg-slate-800 active:bg-slate-700 border border-slate-800 rounded-xl font-semibold text-sm flex items-center justify-center text-slate-300 transition">
@@ -134,10 +172,11 @@
         </button>
       </div>
 
+      <!-- Persistent Footer Links -->
       <div class="flex items-center justify-center space-x-3 text-[11px] text-slate-500 pt-0.5">
-        <a href="https://ketofoldoc.com/privacy.html" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 underline transition">Privacy</a>
+        <a href="https://ketofoldoc.com/privacy.html" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 transition">Privacy Policy</a>
         <span>•</span>
-        <a href="https://ketofoldoc.com/terms.html" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 underline transition">Terms</a>
+        <a href="https://ketofoldoc.com/terms.html" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 transition">Terms of Service</a>
       </div>
     </footer>
   </main>
@@ -171,41 +210,48 @@
         </button>
       </div>
 
+      <!-- State: Logged In -->
       <div id="auth-state-logged-in" class="hidden flex-col items-center text-center py-4">
         <div id="user-display-avatar" class="w-14 h-14 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center text-lg font-bold mb-3"></div>
         <h4 id="user-display-name" class="font-bold text-slate-100 text-base">User Name</h4>
         <p id="user-display-email" class="text-xs text-slate-400 mb-6">user@example.com</p>
         <div class="w-full bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-300 mb-6 flex items-center justify-center">
-          <i data-lucide="check" class="w-4 h-4 mr-1.5"></i> Sync active across your devices
+          <i data-lucide="check" class="w-4 h-4 mr-1.5"></i> Real-time sync active across your devices
         </div>
         <button id="btn-logout" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-rose-400 font-semibold rounded-xl text-sm transition">
           Sign Out
         </button>
       </div>
 
+      <!-- State: Logged Out -->
       <div id="auth-state-logged-out" class="flex flex-col">
         <p class="text-xs text-slate-400 mb-4 leading-relaxed">
-          Sign in or create an account to synchronize your chapter progress and bookmarks across devices.
+          Sign in or create an account to synchronize your progress and bookmarks across your devices.
         </p>
 
+        <!-- Google Sign In Button -->
         <button id="btn-google-login" class="w-full py-3 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-900 font-semibold rounded-xl text-sm flex items-center justify-center space-x-2 shadow-md transition mb-4">
           <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
           <span>Continue with Google</span>
         </button>
 
+        <!-- Divider -->
         <div class="flex items-center my-2 mb-4">
           <div class="flex-1 border-t border-slate-800"></div>
           <span class="px-3 text-[11px] text-slate-500 font-medium uppercase tracking-wider">or with email</span>
           <div class="flex-1 border-t border-slate-800"></div>
         </div>
 
+        <!-- Auth Mode Tabs -->
         <div class="flex p-1 bg-slate-950 rounded-xl border border-slate-800 mb-4">
           <button id="tab-auth-signin" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-blue-600 text-white">Sign In</button>
           <button id="tab-auth-signup" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition text-slate-400 hover:text-slate-200">Create Account</button>
         </div>
 
+        <!-- Error Box -->
         <div id="auth-error-box" class="hidden mb-4 p-3 bg-rose-950/50 border border-rose-800/60 rounded-xl text-xs text-rose-300 leading-relaxed"></div>
 
+        <!-- Email & Password Form -->
         <form id="form-email-auth" class="space-y-3">
           <div>
             <label class="block text-[11px] font-semibold text-slate-400 mb-1">Email Address</label>
@@ -237,6 +283,52 @@
   <!-- ES6 Application Logic -->
   <script type="module">
     import { allChapters } from './decks/index.js';
+
+    // 🛠️ Formatting Helper
+    function formatMarkdown(text) {
+      if (!text) return '';
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-100">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+        .replace(/\n/g, '<br/>');
+    }
+
+    // 🧠 Spaced Repetition (SM-2 Inspired) Calculator
+    function calculateNextSRS(currentSRS, rating) {
+      let { interval = 0, repetitions = 0, easeFactor = 2.5 } = currentSRS || {};
+      const now = new Date();
+
+      if (rating === 'again') {
+        repetitions = 0;
+        interval = 1;
+        easeFactor = Math.max(1.3, easeFactor - 0.2);
+      } else if (rating === 'hard') {
+        interval = Math.max(1, Math.round(interval * 1.2)) || 1;
+        easeFactor = Math.max(1.3, easeFactor - 0.15);
+      } else if (rating === 'good') {
+        if (repetitions === 0) interval = 1;
+        else if (repetitions === 1) interval = 3;
+        else interval = Math.round(interval * easeFactor);
+        repetitions += 1;
+      } else if (rating === 'easy') {
+        if (repetitions === 0) interval = 4;
+        else if (repetitions === 1) interval = 7;
+        else interval = Math.round(interval * easeFactor * 1.3);
+        repetitions += 1;
+        easeFactor += 0.15;
+      }
+
+      const nextDue = new Date();
+      nextDue.setDate(now.getDate() + interval);
+
+      return {
+        interval,
+        repetitions,
+        easeFactor: parseFloat(easeFactor.toFixed(2)),
+        dueDate: nextDue.toISOString(),
+        lastReviewed: now.toISOString()
+      };
+    }
 
     // Build Decks Map from allChapters
     const DECKS = {};
@@ -358,7 +450,9 @@
       const currentDeck = state.decks[state.currentDeckId];
       if (!currentDeck || currentDeck.questions.length === 0) return;
       const progress = getProgress();
+      progress.isSRSMode = false;
       progress.isShuffled = !progress.isShuffled;
+
       if (progress.isShuffled) {
         progress.order = generateShuffledIndices(currentDeck.questions.length);
         progress.currentIndex = 0;
@@ -370,10 +464,52 @@
       saveState();
     }
 
+    function toggleSRSMode() {
+      const currentDeck = state.decks[state.currentDeckId];
+      if (!currentDeck || currentDeck.questions.length === 0) return;
+
+      const progress = getProgress();
+      progress.isSRSMode = !progress.isSRSMode;
+      progress.isShuffled = false;
+
+      if (progress.isSRSMode) {
+        const now = new Date();
+        const dueIndices = [];
+        currentDeck.questions.forEach((_, idx) => {
+          const srs = (progress.srs || {})[idx];
+          if (!srs || !srs.dueDate || new Date(srs.dueDate) <= now) {
+            dueIndices.push(idx);
+          }
+        });
+
+        if (dueIndices.length === 0) {
+          alert('🎉 Excellent! No questions are due for review in this chapter today.');
+          progress.isSRSMode = false;
+          progress.order = [];
+        } else {
+          progress.order = dueIndices;
+          progress.currentIndex = 0;
+        }
+      } else {
+        progress.order = [];
+        progress.currentIndex = 0;
+      }
+
+      saveState();
+    }
+
     function getProgress() {
-      if (!state.currentDeckId) return { currentIndex: 0, answers: {}, flags: [], isShuffled: false, order: [] };
+      if (!state.currentDeckId) return { currentIndex: 0, answers: {}, flags: [], isShuffled: false, isSRSMode: false, order: [], srs: {} };
       if (!state.userProgress[state.currentDeckId]) {
-        state.userProgress[state.currentDeckId] = { currentIndex: 0, answers: {}, flags: [], isShuffled: false, order: [] };
+        state.userProgress[state.currentDeckId] = {
+          currentIndex: 0,
+          answers: {},
+          flags: [],
+          isShuffled: false,
+          isSRSMode: false,
+          order: [],
+          srs: {}
+        };
       }
       return state.userProgress[state.currentDeckId];
     }
@@ -402,8 +538,11 @@
       const progress = getProgress();
       const totalQ = currentDeck.questions.length;
       const qPointer = progress.currentIndex || 0;
-      const actualIndex = (progress.isShuffled && progress.order && progress.order.length === totalQ)
-        ? progress.order[qPointer] : qPointer;
+
+      const hasCustomOrder = progress.order && progress.order.length > 0;
+      const actualIndex = hasCustomOrder ? progress.order[qPointer] : qPointer;
+      const activeTotal = hasCustomOrder ? progress.order.length : totalQ;
+
       const q = currentDeck.questions[actualIndex] || currentDeck.questions[0];
 
       // Update Header
@@ -423,20 +562,33 @@
       const acc = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 100;
       document.getElementById('score-badge').textContent = `Accuracy: ${acc}%`;
 
-      // Shuffle Tag
+      // Shuffle & SRS Buttons / Tags
       const shuffleBtn = document.getElementById('btn-shuffle');
       const shuffleTag = document.getElementById('shuffle-mode-tag');
+      const srsBtn = document.getElementById('btn-srs-filter');
+      const srsTag = document.getElementById('srs-mode-tag');
+
       if (progress.isShuffled) {
         shuffleBtn.className = 'p-2 text-indigo-400 bg-indigo-950/60 border border-indigo-800/60 rounded-lg active:bg-slate-800 transition shrink-0';
         shuffleTag.classList.remove('hidden');
-        document.getElementById('question-number-badge').textContent = `Question ${qPointer + 1} of ${totalQ} (Original #${actualIndex + 1})`;
+        srsTag.classList.add('hidden');
+        srsBtn.className = 'p-2 text-slate-400 hover:text-emerald-400 rounded-lg active:bg-slate-800 transition shrink-0';
+        document.getElementById('question-number-badge').textContent = `Question ${qPointer + 1} of ${activeTotal} (Original #${actualIndex + 1})`;
+      } else if (progress.isSRSMode) {
+        srsBtn.className = 'p-2 text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 rounded-lg active:bg-slate-800 transition shrink-0';
+        srsTag.classList.remove('hidden');
+        shuffleTag.classList.add('hidden');
+        shuffleBtn.className = 'p-2 text-slate-400 hover:text-indigo-400 rounded-lg active:bg-slate-800 transition shrink-0';
+        document.getElementById('question-number-badge').textContent = `SRS Due ${qPointer + 1} of ${activeTotal} (Original #${actualIndex + 1})`;
       } else {
         shuffleBtn.className = 'p-2 text-slate-400 hover:text-indigo-400 rounded-lg active:bg-slate-800 transition shrink-0';
+        srsBtn.className = 'p-2 text-slate-400 hover:text-emerald-400 rounded-lg active:bg-slate-800 transition shrink-0';
         shuffleTag.classList.add('hidden');
+        srsTag.classList.add('hidden');
         document.getElementById('question-number-badge').textContent = `Question ${qPointer + 1} of ${totalQ}`;
       }
 
-      // Stem Text & Optional Question Figure
+      // Stem Text & Stem Image
       document.getElementById('question-stem').textContent = q.stem;
       const stemImgContainer = document.getElementById('stem-image-container');
       const stemImg = document.getElementById('stem-image');
@@ -448,7 +600,7 @@
         stemImgContainer.classList.add('hidden');
       }
 
-      // Flag State
+      // Flag state
       const isFlagged = (progress.flags || []).includes(actualIndex);
       const flagBtn = document.getElementById('btn-flag');
       flagBtn.className = isFlagged 
@@ -475,16 +627,32 @@
         optionsContainer.appendChild(btn);
       });
 
-      // Explanation & Optional Rationale Figures
+      // Explanation & Rationale Box
       const expBox = document.getElementById('explanation-box');
       const expImgContainer = document.getElementById('explanation-images-container');
+
       if (selectedAnswer && (q.explanation || q.correctAnswer)) {
         expBox.classList.remove('hidden');
         document.getElementById('explanation-content').innerHTML = `
           <div><b>Correct Answer:</b> Option ${q.correctAnswer}</div>
-          <div class="mt-1 text-slate-300">${q.explanation || 'No rationale provided.'}</div>
+          <div class="mt-1 text-slate-300">${formatMarkdown(q.explanation) || 'No rationale provided.'}</div>
         `;
 
+        // 🧠 Update SRS Status Tag
+        const srsData = (progress.srs || {})[actualIndex];
+        const srsTagStatus = document.getElementById('srs-status-tag');
+        if (srsTagStatus) {
+          if (srsData && srsData.dueDate) {
+            const daysLeft = Math.ceil((new Date(srsData.dueDate) - new Date()) / (1000 * 60 * 60 * 24));
+            srsTagStatus.textContent = daysLeft <= 0 ? 'Due for Review Today' : `Due in ${daysLeft}d (Interval: ${srsData.interval}d)`;
+            srsTagStatus.className = daysLeft <= 0 ? 'text-[10px] text-amber-400 font-bold' : 'text-[10px] text-emerald-400 font-medium';
+          } else {
+            srsTagStatus.textContent = 'Not rated yet';
+            srsTagStatus.className = 'text-[10px] text-slate-500';
+          }
+        }
+
+        // Render explanation figures if present
         if (q.explanationImages && q.explanationImages.length > 0) {
           expImgContainer.innerHTML = '';
           q.explanationImages.forEach(src => {
@@ -495,7 +663,7 @@
             expImgContainer.appendChild(img);
           });
           expImgContainer.classList.remove('hidden');
-        } else {
+        } else if (expImgContainer) {
           expImgContainer.classList.add('hidden');
         }
       } else {
@@ -512,6 +680,20 @@
       saveState();
     }
 
+    // 🧠 Handle SRS Recall Ratings
+    window.rateRecall = (rating) => {
+      const d = state.decks[state.currentDeckId];
+      if (!d) return;
+      const progress = getProgress();
+      const hasCustomOrder = progress.order && progress.order.length > 0;
+      const idx = hasCustomOrder ? progress.order[progress.currentIndex] : progress.currentIndex;
+
+      progress.srs = progress.srs || {};
+      progress.srs[idx] = calculateNextSRS(progress.srs[idx], rating);
+      
+      saveState();
+    };
+
     function renderDeckList() {
       const list = document.getElementById('deck-list');
       list.innerHTML = '';
@@ -521,7 +703,14 @@
         const deck = state.decks[id];
         const progress = state.userProgress[id] || { answers: {} };
         const answered = Object.keys(progress.answers || {}).length;
+        const total = deck.questions.length;
         const isCurrent = id === state.currentDeckId;
+
+        let correct = 0;
+        Object.entries(progress.answers || {}).forEach(([idx, ans]) => {
+          if (deck.questions[idx] && deck.questions[idx].correctAnswer === ans) correct++;
+        });
+        const acc = answered > 0 ? Math.round((correct / answered) * 100) : null;
 
         const item = document.createElement('div');
         item.className = `p-3.5 rounded-xl border flex items-center justify-between transition cursor-pointer ${
@@ -531,7 +720,10 @@
         item.innerHTML = `
           <div class="flex-1 min-w-0 pr-3">
             <div class="font-bold text-sm truncate text-slate-100">${deck.title}</div>
-            <div class="text-xs text-slate-400 mt-0.5">${answered}/${deck.questions.length} completed</div>
+            <div class="text-xs text-slate-400 mt-0.5 flex items-center space-x-2">
+              <span>${answered}/${total} completed</span>
+              ${acc !== null ? `<span>•</span><span class="${acc >= 75 ? 'text-emerald-400' : 'text-amber-400'}">${acc}% accuracy</span>` : ''}
+            </div>
           </div>
           <div class="shrink-0">
             ${isCurrent ? `<span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-blue-500/20 border border-blue-400/40 text-blue-300 rounded-md">Active</span>` : `<i data-lucide="chevron-right" class="w-4 h-4 text-slate-500"></i>`}
@@ -550,28 +742,42 @@
 
     // Navigation Events
     document.getElementById('btn-shuffle').onclick = () => toggleShuffleMode();
+    document.getElementById('btn-srs-filter').onclick = () => toggleSRSMode();
+
     document.getElementById('btn-next').onclick = () => {
       const p = getProgress(), d = state.decks[state.currentDeckId];
-      if (p && d && p.currentIndex < d.questions.length - 1) { p.currentIndex++; saveState(); }
+      if (!p || !d) return;
+      const maxLen = (p.order && p.order.length > 0) ? p.order.length : d.questions.length;
+      if (p.currentIndex < maxLen - 1) { 
+        p.currentIndex++; 
+        saveState(); 
+      }
     };
+
     document.getElementById('btn-prev').onclick = () => {
       const p = getProgress();
-      if (p && p.currentIndex > 0) { p.currentIndex--; saveState(); }
+      if (p && p.currentIndex > 0) { 
+        p.currentIndex--; 
+        saveState(); 
+      }
     };
+
     document.getElementById('btn-reveal').onclick = () => {
       const p = getProgress(), d = state.decks[state.currentDeckId];
       if (p && d) {
-        const idx = (p.isShuffled && p.order && p.order.length > 0) ? p.order[p.currentIndex] : p.currentIndex;
+        const idx = (p.order && p.order.length > 0) ? p.order[p.currentIndex] : p.currentIndex;
         handleSelectOption(idx, d.questions[idx].correctAnswer || 'A');
       }
     };
+
     document.getElementById('btn-flag').onclick = () => {
       const p = getProgress(), d = state.decks[state.currentDeckId];
       if (!p || !d) return;
-      const idx = (p.isShuffled && p.order && p.order.length > 0) ? p.order[p.currentIndex] : p.currentIndex;
+      const idx = (p.order && p.order.length > 0) ? p.order[p.currentIndex] : p.currentIndex;
       p.flags = p.flags || [];
       const pos = p.flags.indexOf(idx);
-      if (pos > -1) p.flags.splice(pos, 1); else p.flags.push(idx);
+      if (pos > -1) p.flags.splice(pos, 1); 
+      else p.flags.push(idx);
       saveState();
     };
 
@@ -614,6 +820,7 @@
 
       errBox.classList.add('hidden');
       btnSubmit.disabled = true;
+      btnSubmit.textContent = 'Please wait...';
 
       const p = authMode === 'signup' 
         ? auth.createUserWithEmailAndPassword(email, password)
@@ -634,7 +841,7 @@
         return;
       }
       auth.sendPasswordResetEmail(email).then(() => {
-        alert('Password reset email sent.');
+        alert(`A password reset link has been sent to ${email}. Please check your inbox.`);
       }).catch((err) => {
         errBox.textContent = err.message;
         errBox.classList.remove('hidden');
