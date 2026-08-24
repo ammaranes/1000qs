@@ -65,7 +65,12 @@
         <button id="btn-srs-filter" class="p-2 text-slate-400 hover:text-emerald-400 rounded-lg active:bg-slate-800 transition shrink-0" title="SRS Due Review Mode">
           <i data-lucide="brain" class="w-5 h-5"></i>
         </button>
-        
+
+        <!-- Search Button -->
+        <button id="btn-search" class="p-2 text-slate-400 hover:text-blue-400 rounded-lg active:bg-slate-800 transition shrink-0" title="Search (Ctrl + K)">
+          <i data-lucide="search" class="w-5 h-5"></i>
+        </button>
+
         <!-- Bookmark Button -->
         <button id="btn-flag" class="p-2 text-slate-400 hover:text-amber-400 rounded-lg active:bg-slate-800 transition shrink-0" title="Bookmark Question">
           <i data-lucide="bookmark" class="w-5 h-5"></i>
@@ -181,6 +186,41 @@
     </footer>
   </main>
 
+  <!-- Global Search Modal -->
+  <div id="modal-search" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-12 sm:pt-20">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
+      
+      <!-- Search Input Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center space-x-3 bg-slate-900/90">
+        <i data-lucide="search" class="w-5 h-5 text-slate-400 shrink-0"></i>
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Search keywords, drugs, clinical terms, or concepts..." 
+          class="w-full bg-transparent text-slate-100 placeholder-slate-500 text-sm focus:outline-none"
+          autocomplete="off"
+        />
+        <button id="btn-close-search" class="p-1 text-slate-400 hover:text-white rounded-lg active:bg-slate-800 shrink-0">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Search Results List -->
+      <div id="search-results-list" class="p-4 overflow-y-auto space-y-2.5 flex-1 divide-y divide-slate-800/40">
+        <div class="text-xs text-slate-500 text-center py-8">
+          Type at least 2 characters to search across all chapters...
+        </div>
+      </div>
+      
+      <!-- Footer Shortcut Hint -->
+      <div class="px-4 py-2 bg-slate-950/50 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
+        <span id="search-count-badge">0 results found</span>
+        <span>Press <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-300">ESC</kbd> to close</span>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Chapter Switcher Modal -->
   <div id="modal-decks" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-slate-900 border border-slate-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl max-h-[85vh] flex flex-col overflow-hidden">
@@ -226,7 +266,7 @@
       <!-- State: Logged Out -->
       <div id="auth-state-logged-out" class="flex flex-col">
         <p class="text-xs text-slate-400 mb-4 leading-relaxed">
-          Sign in or create an account to synchronize your progress and bookmarks across your devices.
+          Sign in or create an account to synchronize your chapter progress and bookmarks across devices.
         </p>
 
         <!-- Google Sign In Button -->
@@ -373,6 +413,7 @@
       try { state.userProgress = JSON.parse(savedProgress); } catch (e) {}
     }
 
+    // --- Cloud Authentication & Sync ---
     if (auth) {
       auth.onAuthStateChanged((user) => {
         currentUser = user;
@@ -437,6 +478,153 @@
       });
     }
 
+    // ==========================================
+    // 🔍 GLOBAL FULL-TEXT SEARCH ENGINE
+    // ==========================================
+    const searchModal = document.getElementById('modal-search');
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results-list');
+    const searchCountBadge = document.getElementById('search-count-badge');
+
+    function openSearchModal() {
+      searchModal.classList.remove('hidden');
+      searchInput.value = '';
+      searchInput.focus();
+      renderSearchResults('');
+      lucide.createIcons();
+    }
+
+    function closeSearchModal() {
+      searchModal.classList.add('hidden');
+    }
+
+    function highlightKeyword(text, query) {
+      if (!query || !text) return text || '';
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escaped})`, 'gi');
+      return text.replace(regex, '<span class="bg-blue-500/30 text-blue-200 font-semibold px-0.5 rounded">$1</span>');
+    }
+
+    function searchAllQuestions(query) {
+      const cleanQuery = query.trim().toLowerCase();
+      if (cleanQuery.length < 2) return [];
+
+      const results = [];
+
+      Object.entries(state.decks).forEach(([deckId, deck]) => {
+        if (!deck.questions) return;
+
+        deck.questions.forEach((q, idx) => {
+          let matchScore = 0;
+          let matchSource = '';
+
+          // Check Stem
+          if (q.stem && q.stem.toLowerCase().includes(cleanQuery)) {
+            matchScore += 10;
+            matchSource = q.stem;
+          }
+          // Check Explanation
+          else if (q.explanation && q.explanation.toLowerCase().includes(cleanQuery)) {
+            matchScore += 5;
+            matchSource = q.explanation;
+          }
+          // Check Options
+          else {
+            const optionValues = Array.isArray(q.options) 
+              ? q.options.map(o => o.text).join(' ')
+              : Object.values(q.options || {}).join(' ');
+
+            if (optionValues.toLowerCase().includes(cleanQuery)) {
+              matchScore += 3;
+              matchSource = optionValues;
+            }
+          }
+
+          if (matchScore > 0) {
+            results.push({
+              deckId,
+              deckTitle: deck.title,
+              questionIndex: idx,
+              questionNumber: idx + 1,
+              stem: q.stem,
+              previewSnippet: matchSource,
+              score: matchScore
+            });
+          }
+        });
+      });
+
+      return results.sort((a, b) => b.score - a.score);
+    }
+
+    function renderSearchResults(query) {
+      const results = searchAllQuestions(query);
+      searchResults.innerHTML = '';
+
+      if (query.trim().length < 2) {
+        searchResults.innerHTML = `<div class="text-xs text-slate-500 text-center py-8">Type at least 2 characters to search across all chapters...</div>`;
+        searchCountBadge.textContent = '0 results found';
+        return;
+      }
+
+      if (results.length === 0) {
+        searchResults.innerHTML = `<div class="text-xs text-amber-400/80 text-center py-8">No matching terms found for "<b>${query}</b>".</div>`;
+        searchCountBadge.textContent = '0 results found';
+        return;
+      }
+
+      searchCountBadge.textContent = `${results.length} result${results.length > 1 ? 's' : ''} found`;
+
+      results.forEach(res => {
+        const item = document.createElement('div');
+        item.className = 'pt-2.5 pb-2.5 px-3 rounded-xl hover:bg-slate-800/60 cursor-pointer transition flex flex-col space-y-1';
+        
+        item.innerHTML = `
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-blue-400 truncate">${res.deckTitle}</span>
+            <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700/60 shrink-0">Q# ${res.questionNumber}</span>
+          </div>
+          <p class="text-xs text-slate-200 line-clamp-2 leading-relaxed">
+            ${highlightKeyword(res.stem, query)}
+          </p>
+        `;
+
+        item.onclick = () => {
+          state.currentDeckId = res.deckId;
+          const progress = getProgress();
+          
+          progress.isShuffled = false;
+          progress.isSRSMode = false;
+          progress.order = [];
+          progress.currentIndex = res.questionIndex;
+
+          saveState();
+          closeSearchModal();
+        };
+
+        searchResults.appendChild(item);
+      });
+    }
+
+    // Search Listeners
+    document.getElementById('btn-search').onclick = openSearchModal;
+    document.getElementById('btn-close-search').onclick = closeSearchModal;
+
+    searchInput.addEventListener('input', (e) => {
+      renderSearchResults(e.target.value);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        openSearchModal();
+      }
+      if (e.key === 'Escape' && !searchModal.classList.contains('hidden')) {
+        closeSearchModal();
+      }
+    });
+
+    // --- Shuffle & SRS Modes ---
     function generateShuffledIndices(length) {
       const arr = Array.from({ length }, (_, i) => i);
       for (let i = arr.length - 1; i > 0; i--) {
@@ -520,6 +708,7 @@
       pushStateToCloud();
     }
 
+    // --- Main UI Rendering ---
     function render() {
       lucide.createIcons();
       const currentDeck = state.currentDeckId ? state.decks[state.currentDeckId] : null;
@@ -841,7 +1030,7 @@
         return;
       }
       auth.sendPasswordResetEmail(email).then(() => {
-        alert(`A password reset link has been sent to ${email}. Please check your inbox.`);
+        alert('A password reset link has been sent to your email.');
       }).catch((err) => {
         errBox.textContent = err.message;
         errBox.classList.remove('hidden');
@@ -864,6 +1053,7 @@
       auth.signOut().then(() => document.getElementById('modal-auth').classList.add('hidden'));
     };
 
+    // Initialize UI
     render();
   </script>
 </body>
