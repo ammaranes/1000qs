@@ -93,16 +93,16 @@
     </div>
   </header>
 
-  <!-- Main Content Container -->
-  <main class="flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col justify-between">
+    <!-- Main Content Container (Added pb-36 for mobile scroll clearance) -->
+  <main class="flex-1 max-w-3xl w-full mx-auto p-4 pb-36 flex flex-col">
     
     <!-- Empty State -->
     <div id="view-empty" class="hidden my-auto text-center py-12 px-4">
       <div class="w-16 h-16 bg-slate-800 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-700">
         <i data-lucide="folder-open" class="w-8 h-8"></i>
       </div>
-      <h2 class="text-xl font-bold text-slate-100 mb-2">No Chapter Loaded</h2>
-      <p class="text-sm text-slate-400 max-w-md mx-auto mb-6">Select a chapter from the menu to start practicing.</p>
+      <h2 class="text-xl font-bold text-slate-100 mb-2">No Module Loaded</h2>
+      <p class="text-sm text-slate-400 max-w-md mx-auto mb-6">Select a module from the menu to start practicing.</p>
     </div>
 
     <!-- Active Question View -->
@@ -116,7 +116,7 @@
         <span id="score-badge" class="text-slate-400">Accuracy: 100%</span>
       </div>
 
-      <!-- Question Stem & Optional Stem Figure -->
+      <!-- Question Stem & Optional Stem Image -->
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-sm mb-4">
         <p id="question-stem" class="text-base sm:text-lg font-medium text-slate-100 leading-relaxed"></p>
         <div id="stem-image-container" class="mt-4 hidden">
@@ -130,12 +130,13 @@
       <!-- Explanation & Rationale Box -->
       <div id="explanation-box" class="hidden bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-5 mb-6 text-sm text-slate-300">
         <div class="flex items-center text-emerald-400 font-bold mb-2">
-          <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Explanation & Rationale
+          <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Reference & Rationale
         </div>
+        
         <div id="explanation-content" class="leading-relaxed space-y-2"></div>
         <div id="explanation-images-container" class="mt-4 space-y-3 hidden"></div>
 
-        <!-- Anki SRS Recall Bar -->
+        <!-- Anki Spaced Repetition Bar -->
         <div class="mt-5 pt-4 border-t border-slate-800">
           <div class="text-xs font-semibold text-slate-400 mb-2 flex items-center justify-between">
             <span>Rate Recall (Spaced Repetition):</span>
@@ -162,10 +163,12 @@
         </div>
       </div>
     </div>
+  </main>
 
-    <!-- Navigation Bottom Bar -->
-    <footer id="quiz-footer" class="sticky bottom-0 bg-slate-950/90 backdrop-blur pt-3 pb-3 safe-bottom border-t border-slate-800/80">
-      <div class="flex items-center justify-between space-x-3 mb-2.5">
+  <!-- Navigation Footer (Fixed at the true bottom across all mobile screens) -->
+  <footer id="quiz-footer" class="fixed bottom-0 left-0 right-0 z-30 bg-slate-950/95 backdrop-blur-md pt-3 pb-3 safe-bottom border-t border-slate-800/90 shadow-2xl">
+    <div class="max-w-3xl mx-auto px-4">
+      <div class="flex items-center justify-between space-x-3 mb-2">
         <button id="btn-prev" class="flex-1 py-3 bg-slate-900 hover:bg-slate-800 active:bg-slate-700 border border-slate-800 rounded-xl font-semibold text-sm flex items-center justify-center text-slate-300 transition">
           <i data-lucide="chevron-left" class="w-4 h-4 mr-1"></i> Prev
         </button>
@@ -177,14 +180,14 @@
         </button>
       </div>
 
-      <!-- Persistent Footer Links -->
-      <div class="flex items-center justify-center space-x-3 text-[11px] text-slate-500 pt-0.5">
+      <div class="flex items-center justify-center space-x-3 text-[11px] text-slate-500">
         <a href="https://ketofoldoc.com/privacy.html" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 transition">Privacy Policy</a>
         <span>•</span>
         <a href="https://ketofoldoc.com/terms.html" target="_blank" rel="noopener noreferrer" class="hover:text-slate-300 transition">Terms of Service</a>
       </div>
-    </footer>
-  </main>
+    </div>
+  </footer>
+
 
   <!-- Global Search Modal -->
   <div id="modal-search" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-12 sm:pt-20">
